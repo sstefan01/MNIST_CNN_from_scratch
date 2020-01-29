@@ -1,0 +1,58 @@
+%CNN with 2 convolutional layers, maxpooling, two fully connected
+%layers and cross-entropy loss.
+%Calculates network output, and gradients through backprop
+
+function [L, grads, params] = net_grad(params, im, lab)
+
+
+w1 = params{1};
+w2 = params{2};
+w3 = params{3};
+w4 = params{4};
+
+b1 = params{5};
+b2 = params{6};
+b3 = params{7};
+b4 = params{8};
+
+
+conv1 = input_convolve2d(im,w1,b1,[1 1], 0); %stride [1 1] with 0 padding
+a1 = relu(conv1);
+conv2 = input_convolve2d(a1,w2,b2,[1 1], 0);
+m1 = maxpool(conv2, [2,2], [1 1], 0);
+fc = reshape(m1, size(m1,1)*size(m1,2)*size(m1,3),size(m1,4));
+z = w3*fc+b3;
+z = relu(z);
+out = w4*z + b4;
+out = relu(out);
+probs = softmax(out);
+L = cross_entropy(probs, lab);
+
+%calculating gradients through backprop
+dout = probs-lab;
+dw4= dout*z';
+db4 = sum(dout,2); %summing gradients over batches
+
+dz = w4'*dout;
+dz(z < 0) = 0;
+dw3 = dz*fc';
+db3 = dz;
+db3 = sum(db3,2); 
+
+dfc = w3'*dz;
+dpool = reshape(dfc, size(m1));
+dconv2 = maxpool_backprop(conv2, dpool, [2 2] , [1 1], 0);
+dconv2(conv2 < 0) = 0;
+[dw2, dconv1, db2] = back_convolve(conv1, dconv2,[1 1], 0,w2);
+dconv1(conv1 < 0) = 0;
+dw2 = sum(dw2,5);
+db2 = sum(db2,4);
+
+[dw1, ~, db1] = back_convolve(im, dconv1,[1 1], 0,w1);
+dw1 = sum(dw1,5);
+db1 = sum(db1,4);
+
+grads = {dw1, dw2, dw3, dw4, db1, db2,db3, db4};
+params = {w1, w2, w3, w4, b1, b2, b3, b4};
+end
+
