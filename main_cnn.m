@@ -30,7 +30,7 @@ for i = 1:batch_size:size(XTrain,4)
     it = 0;
     for k = i:i+batch_size-1
      it = it +1;
-     lab(double(YTrain(k)),it) = 1;
+     lab(double(YTrain(k))+1,it) = 1;
     end
     
 t = t+1;
